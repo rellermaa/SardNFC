@@ -13,9 +13,9 @@
 #define TRANCEIVER
 
 /********* DEBUG **********/
-#define DEBUG				1		// Send all information to the UART
-#define DEBUG_RF			1		// Send all RF related data to the UART
-#define DEBUG_ERR			1		// Send only error information to the UART
+//#define DEBUG				1		// Send all information to the UART
+//#define DEBUG_RF			1		// Send all RF related data to the UART
+//#define DEBUG_ERR			1		// Send only error information to the UART
 
 
 /********* SYSTEM **********/

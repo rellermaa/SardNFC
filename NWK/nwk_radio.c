@@ -67,7 +67,7 @@ uint8 Radio_Send_Data(uint8 *packet, uint8 len, uint8 dest_address, uint8 encryp
 		nwk_header[0] = PAYLOAD_ENC_OFF;
 
 	// Add security header to the packet and get new length of the packet
-	 len = _Modify_Packet_Header(packet, len, nwk_header);
+	len = _Modify_Packet_Header(packet, len, nwk_header);
 
 	// Modify CTRL byte to ask for ACK
 	if (ack) {
@@ -89,7 +89,7 @@ uint8 Radio_Send_Data(uint8 *packet, uint8 len, uint8 dest_address, uint8 encryp
 	if (encryption)
 		UART_Send_Data(" (ENC):");
 	for (dbg_cntr = 0; dbg_cntr < len; dbg_cntr++) {
-		UART0_Send_ByteToChar(&packet[dbg_cntr]);
+		UART_Send_Byte(packet[dbg_cntr]);
 	}
 #endif
 
@@ -124,7 +124,7 @@ uint8 Radio_Send_Data(uint8 *packet, uint8 len, uint8 dest_address, uint8 encryp
 #if (DEBUG_RF)
 		UART_Send_Data("\r\nNWK ACK:");
 		for (cntr = 0; cntr < len; ++cntr) {
-			UART0_Send_ByteToChar(&(RxPacket[cntr]));
+			UART_Send_Byte(RxPacket[cntr]);
 		}
 #endif
 		}
@@ -156,7 +156,7 @@ uint8 Radio_Receive_Data(uint8 *packet, uint8 *length, uint16 timeout, uint8 *rs
 	uint8 encryption;		// Get the encryption key from the packet header
 
 	// Receive data
-	Radio_Rx(packet, length, timeout, rssi, error);
+	if(Radio_Rx(packet, length, timeout, rssi, error)) return 1;
 
 	// Get encryption bit
 	encryption = packet[3];
@@ -217,7 +217,7 @@ uint8 Radio_Receive_Data(uint8 *packet, uint8 *length, uint16 timeout, uint8 *rs
 #if (DEBUG_RF)
 		UART_Send_Data("\r\nNWK Sending ACK: ");
 		for (cntr = 0; cntr < packet_len; ++cntr) {
-			UART0_Send_ByteToChar(&(TxPacket[cntr]));
+			UART_Send_Byte(TxPacket[cntr]);
 		}
 #endif
 	}

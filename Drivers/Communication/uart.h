@@ -9,7 +9,7 @@
 /***************************************************************************************************
  *	        Define section					                       		   					       *
  ***************************************************************************************************/
-#define MAX_UART_STR_LENGTH 	32		// UART max incoming string size
+#define MAX_UART_STR_LENGTH 	60		// UART max incoming string size
 #define AMARINO_END_STR			0x13
 
 /***************************************************************************************************
@@ -21,10 +21,14 @@ void UART_Send_Data(const char *str);
 void UART0_Send_ByteToChar(unsigned char bytes[]);
 uint8 UART_Receive_Data(uint8 *uart_data_buf);
 
+uint8 uart_buf_size();
+uint8 uart_read();
+
 /***************************************************************************************************
  *	        Global Variable section  				                            				   *
  ***************************************************************************************************/
-uint8 uart_buf_size;
+uint8 uart_buf_head;
+uint8 uart_buf_tail;
 char uart_rcv_buf[MAX_UART_STR_LENGTH];
 
 

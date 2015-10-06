@@ -60,7 +60,8 @@ void UART_Init(void) {
 	UCA0CTL1 &= ~UCSWRST;               		// **Initialize USCI state machine**
 	IE2 |= UCA0RXIE;                          	// Enable USCI_A0 RX interrupt
 
-	uart_buf_size = 0;
+	uart_buf_head = 0;
+	uart_buf_tail = 0;
 }
 
 
@@ -121,9 +122,28 @@ void UART0_Send_ByteToChar(unsigned char bytes[]) {
 
 #pragma vector=USCIAB0RX_VECTOR
 __interrupt void USCI0RX_ISR(void) {
-	uart_rcv_buf[uart_buf_size++] = UCA0RXBUF;
+	uart_rcv_buf[uart_buf_head++] = UCA0RXBUF;
+	if(uart_buf_head == MAX_UART_STR_LENGTH) uart_buf_head = 0;
 	_NOP();
 }
 
+uint8 uart_read()
+{
+	uint8 character = 0;
+	if(uart_buf_tail != uart_buf_head)
+	{
+		character = uart_rcv_buf[uart_buf_tail];
+		uart_buf_tail++;
+		if(uart_buf_tail == MAX_UART_STR_LENGTH) uart_buf_tail = 0;
+	}
+	return character;
+}
 
+uint8 uart_buf_size()
+{
+	if(uart_buf_head >= uart_buf_tail)
+		return uart_buf_head - uart_buf_tail;
+	else
+		return uart_buf_head+MAX_UART_STR_LENGTH - uart_buf_tail;
+}
 
