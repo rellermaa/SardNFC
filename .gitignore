@@ -4,6 +4,8 @@
 .cproject
 .project
 targetConfigs
+debug/
+
 
 # Windows image file caches
 Thumbs.db

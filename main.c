@@ -22,6 +22,8 @@ int main(void)
 	uint8 send_data = 0;
 	WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
 
+	uint8 MainPacket[RF_BUFFER_SIZE];
+
 	System_Init(&error);
 	__enable_interrupt();
 
@@ -42,15 +44,30 @@ int main(void)
 			UART_Send_Byte(character);
 			// If we get CR, send packet, otherwise append data to radio packet
 			if(character == '\r') send_data = 1;
-			else TxPacket[payload_length++] = character;
+			else MainPacket[payload_length++] = character;
 		}
 
 		// If we have packet, send to radio
 		if(send_data)
 		{
+			uint8 retries;
 			send_data = 0;
+			uint8 x;
 
+			for(x = RF_BUFFER_SIZE-1;x;x--)
+				TxPacket[x-1] = MainPacket[x-1];
 			Radio_Send_Data(TxPacket, payload_length, ADDR_REMOTE, PAYLOAD_ENC_ON, PCKT_ACK_ON, &error);
+			if(error == ERR_NO_ACK)
+			{
+				for(retries = 5;retries;retries--)
+				{
+					UART_Send_Data("NWK ERR: No ACK received\r\n");
+					for(x = RF_BUFFER_SIZE;x;x--)
+						TxPacket[x-1] = MainPacket[x-1];
+					if(!(Radio_Send_Data(TxPacket, payload_length, ADDR_REMOTE, PAYLOAD_ENC_ON, PCKT_ACK_ON, &error)))
+						break;
+				}
+			}
 
 			payload_length = 0;
 			// Set radio into RX mode
@@ -58,7 +75,7 @@ int main(void)
 		}
 
 		// Receive data, wait until 500ms until timeout and continue with other tasks
-		if (Radio_Receive_Data(RxPacket, &len, 500, &rssi_rx, &error))
+		if (Radio_Receive_Data(RxPacket, &len, 1, &rssi_rx, &error))
 		{
 			// If error
 			if (error == ERR_RX_WRONG_LENGTH)

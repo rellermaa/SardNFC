@@ -39,8 +39,8 @@ uint8 nwk_header[NWK_HEADER_SIZE];
 // @return      uint8 EXIT_NO_ERROR		Return with no error
 //					  EXIT_ERROR		Return with error
 // *************************************************************************************************
-uint8 Radio_Send_Data(uint8 *packet, uint8 len, uint8 dest_address, uint8 encryption, uint8 ack, uint8 *error) {
-
+uint8 Radio_Send_Data(uint8 *packet, uint8 len, uint8 dest_address, uint8 encryption, uint8 ack, uint8 *error)
+{
 	// Check if payload is bigger than allowed
 	if (len > PAYLOAD_MAX_SIZE) {
 		*error = ERR_PAYLOAD_TOO_BIG;
@@ -99,7 +99,7 @@ uint8 Radio_Send_Data(uint8 *packet, uint8 len, uint8 dest_address, uint8 encryp
 
 	// Receive ACK
 	if (ack) {
-		uint16 timeout = 1000;
+		uint16 timeout = 100;
 		uint8 cntr;
 
 		for (cntr=RF_BUFFER_SIZE-1; cntr > 0; cntr--)

@@ -256,48 +256,42 @@ uint8 Radio_Rx(uint8 packet[], uint8 *length, uint16 timeout_ms, uint8 *rssi, ui
 			*error = EXIT_TIMEOUT;
 			return EXIT_ERROR;
 		}
-
 	}
-
 
 #if (DEBUG_RF)
 	UART_Send_Data("\r\nLNK RX RSSI:");
 	UART0_Send_ByteToChar(rssi);
 	UART_Send_Data("\r\nLNK Radio RX data: ");
 #endif
-
 	var = 0;
-	while (RF_IRQ_PORT_IN & RF_IRQ1_PIN) { // while data last read from RF buffer
+	while (RF_IRQ_PORT_IN & RF_IRQ1_PIN) // while data last read from RF buffer
+	{
 		packet[var] = SPI_Data_Read();
-
 #if (DEBUG_RF)
 		// Print out raw received data to UART0
 		UART0_Send_ByteToChar(&(packet[var]));
 #endif
-
 		var++;
-		if (var > RF_BUFFER_SIZE) {
-
+		if (var > RF_BUFFER_SIZE)
+		{
 #if (DEBUG_ERR)
 			UART_Send_Data("\r\nLNK ERR: RX Wrong length! Overflow");
 #endif
-
 			*error = ERR_RX_WRONG_LENGTH;
 			return EXIT_ERROR;
 		}
 	}
-	//
-	if (var == packet[0]+1) {
+	if (var == packet[0]+1)
+	{
 		*length = var;
-	} else {
-
+	}
+	else
+	{
 #if (DEBUG_ERR)
 		UART_Send_Data("\r\nLNK ERR: RX wrong length! Not Equal");
 #endif
-
 		*error = ERR_RX_WRONG_LENGTH;
 		return EXIT_ERROR;
-
 	}
 	return EXIT_NO_ERROR;
 }
