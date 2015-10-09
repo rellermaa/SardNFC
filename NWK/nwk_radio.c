@@ -41,6 +41,14 @@ uint8 nwk_header[NWK_HEADER_SIZE];
 // *************************************************************************************************
 uint8 Radio_Send_Data(uint8 *packet, uint8 len, uint8 dest_address, uint8 encryption, uint8 ack, uint8 *error)
 {
+	uint8 lok_pack[PAYLOAD_MAX_SIZE];
+	uint8 bytenr = 0;
+
+	for(bytenr = 0; bytenr < len; bytenr++)
+	{
+		lok_pack[bytenr] = packet[bytenr];
+	}
+
 	// Check if payload is bigger than allowed
 	if (len > PAYLOAD_MAX_SIZE) {
 		*error = ERR_PAYLOAD_TOO_BIG;
@@ -67,18 +75,18 @@ uint8 Radio_Send_Data(uint8 *packet, uint8 len, uint8 dest_address, uint8 encryp
 		nwk_header[0] = PAYLOAD_ENC_OFF;
 
 	// Add security header to the packet and get new length of the packet
-	len = _Modify_Packet_Header(packet, len, nwk_header);
+	len = _Modify_Packet_Header(lok_pack, len, nwk_header);
 
 	// Modify CTRL byte to ask for ACK
 	if (ack) {
-		packet[1] |= PKCT_CTRL_ACK_REQ;
+		lok_pack[1] |= PKCT_CTRL_ACK_REQ;
 	}
 
 	// Encrypt payload
 	if (encryption) {
 		// Modify CTRL byte to enable security
 		//packet[0] |= PKCT_CTRL_SECURITY;
-		Payload_Encrypt(packet+1);	// Add +1 to set encryption bit unencrypted
+		Payload_Encrypt(lok_pack+1);	// Add +1 to set encryption bit unencrypted
 		len = 16+2;		// Set new length because each packet is encrypted with 128 bits = 16 bytes
 	}
 
@@ -94,7 +102,7 @@ uint8 Radio_Send_Data(uint8 *packet, uint8 len, uint8 dest_address, uint8 encryp
 #endif
 
 	// Send packet
-	Radio_Tx(packet, len, dest_address, error);
+	Radio_Tx(lok_pack, len, dest_address, error);
 	// DO NOT PUT ANYTHING THAT CAUSE DELAY FROM HERE TO ACK RECEIVING!!!
 
 	// Receive ACK
@@ -122,10 +130,11 @@ uint8 Radio_Send_Data(uint8 *packet, uint8 len, uint8 dest_address, uint8 encryp
 			return EXIT_ERROR;
 		} else {
 #if (DEBUG_RF)
-		UART_Send_Data("\r\nNWK ACK:");
-		for (cntr = 0; cntr < len; ++cntr) {
-			UART_Send_Byte(RxPacket[cntr]);
-		}
+			UART_Send_Data("\r\nNWK ACK:");
+			for (cntr = 0; cntr < len; ++cntr)
+			{
+				UART_Send_Byte(RxPacket[cntr]);
+			}
 #endif
 		}
 

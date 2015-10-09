@@ -12,6 +12,8 @@
 #include "nwk_security.h"
 #include "nwk_radio.h"
 
+#include "Protocol.h"
+
 /*
  * main.c
  */
@@ -102,9 +104,10 @@ int main(void)
 				UART_Send_Byte(RxPacket[var]);
 			}
 
-			if(RxPacket[3] == PACKET_GET_STATUS)
+			if(RxPacket[5] == PROTOCOL_STATUS_REQUEST)
 			{
-
+				UART_Send_Data("Status Request\r\n");
+				Protocol_Send_Status();
 			}
 
 			// Get environemnt RSSI value (noise level)

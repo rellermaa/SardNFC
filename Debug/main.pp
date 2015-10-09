@@ -18,6 +18,8 @@ main.obj: C:/Programming/TI\ CC/SardNFC/LNK/radio.h
 main.obj: C:/Programming/TI\ CC/SardNFC/Drivers/mrf89xa.h
 main.obj: C:/Programming/TI\ CC/SardNFC/NWK/nwk_security.h
 main.obj: C:/Programming/TI\ CC/SardNFC/NWK/nwk_radio.h
+main.obj: ../Protocol.h
+main.obj: C:/Programming/TI\ CC/SardNFC/Drivers/Communication/spi.h
 
 ../main.c: 
 C:/Electronics/ti/ccsv6/ccs_base/msp430/include/msp430.h: 
@@ -37,3 +39,5 @@ C:/Programming/TI\ CC/SardNFC/LNK/radio.h:
 C:/Programming/TI\ CC/SardNFC/Drivers/mrf89xa.h: 
 C:/Programming/TI\ CC/SardNFC/NWK/nwk_security.h: 
 C:/Programming/TI\ CC/SardNFC/NWK/nwk_radio.h: 
+../Protocol.h: 
+C:/Programming/TI\ CC/SardNFC/Drivers/Communication/spi.h: 
