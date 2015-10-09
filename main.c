@@ -102,6 +102,11 @@ int main(void)
 				UART_Send_Byte(RxPacket[var]);
 			}
 
+			if(RxPacket[3] == PACKET_GET_STATUS)
+			{
+
+			}
+
 			// Get environemnt RSSI value (noise level)
 			rssi_env = Radio_Get_RSSI();
 

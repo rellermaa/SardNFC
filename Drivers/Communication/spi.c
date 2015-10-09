@@ -31,8 +31,11 @@ unsigned char dummy;
 // *************************************************************************************************
 void SPI_Init(void) {
 	// Configure SPI pins
-	SPI_SEL();
-	SPI_SEL2();
+	//SPI_SEL();
+	//SPI_SEL2();
+
+	P2SEL = 0;
+	P2SEL2 = 0;
 	SPI_CLK_OUT();
 	SPI_MOSI_OUT();
 	SPI_MISO_IN();
@@ -42,15 +45,15 @@ void SPI_Init(void) {
 	SPI_CS_CONF_OUT();
 	SPI_CS_CONF_HI();
 
-
 	// Configure SPI
-	UCB0CTL1 = UCSWRST;										// Enable SW reset
+/*	UCB0CTL1 = UCSWRST;										// Enable SW reset
 	UCB0CTL0 |= UCMODE_0 | UCMSB | UCSYNC | UCMST | UCCKPH ;// 4-pin, 8-bit SPI master
 	UCB0CTL1 |= UCSSEL_2;                    	 			// SMCLK
 	UCB0BR0 |= SYSTEM_SPEED_MHZ;              				// Divider: SMCLK/SYS_SPEED = 1MHz
 	UCB0BR1 = 0;                              				//
 	UCB0CTL1 &= ~UCSWRST;                   				// **Initialize USCI state machine**
 	IE2 |= 0;                          						// Disable USCI0 interrupts
+*/
 }
 
 
@@ -60,15 +63,33 @@ void SPI_Init(void) {
 // @param       const unsigned char _data
 // @return      unsigned char
 // *************************************************************************************************
-unsigned char Spi_Send(const unsigned char _data) {
-	UCB0TXBUF = _data; 				// setting TXBUF clears the TXIFG flag
-	while (!(IFG2 & UCB0TXIFG));
+unsigned char Spi_Send(const unsigned char _data)
+{
+	uint8 data_out = _data, data_in = 0;
+	uint8 bit;
+//	UCB0TXBUF = _data; 				// setting TXBUF clears the TXIFG flag
+//	while (!(IFG2 & UCB0TXIFG));
+
+	for(bit = 8; bit; bit--)
+	{
+		if(data_out & (1<<(bit-1)))
+			SPI_DATA_HI();
+		else
+			SPI_DATA_LO();
+
+		__delay_cycles(1);
+		SPI_CLK_HI();
+		data_in |= (SPI_DATA_IN << (bit-1));
+		__delay_cycles(1);
+		SPI_CLK_LO();
+	}
+
 	// Add some delay for MRF89XA
 	if (SYSTEM_SPEED_MHZ > SYSTEM_SPEED_1MHZ)
 		__delay_cycles(120);			// Minimum req. delay for MRF89 module is 100 cycles
 	else
 		__delay_cycles(10);
-	return UCB0RXBUF; 				// reading clears RXIFG flag
+	return data_in;//UCB0RXBUF; //data_in;// 				// reading clears RXIFG flag
 }
 
 
@@ -78,7 +99,8 @@ unsigned char Spi_Send(const unsigned char _data) {
 // @param       none
 // @return      none
 // *************************************************************************************************
-unsigned char SPI_Conf_Read_Register(unsigned char address) {
+unsigned char SPI_Conf_Read_Register(unsigned char address)
+{
 	unsigned char Rx_buf;
 
 	SPI_CS_CONF_LO();

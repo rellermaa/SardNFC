@@ -25,8 +25,8 @@
 #define RF_IRQ_PORT_IES		(P2IES)
 #define RF_IRQ_PORT_IFG		(P2IFG)
 
-#define RF_IRQ0_PIN			BIT0	// P2.0
-#define RF_IRQ1_PIN			BIT1	// P2.1
+#define RF_IRQ0_PIN			BIT4	// P2.0
+#define RF_IRQ1_PIN			BIT3	// P2.1
 
 #define RF_RESET_PORT_DIR	(P2DIR)
 #define RF_RESET_PORT_OUT	(P2OUT)
@@ -46,6 +46,7 @@
 #define SPI_PORT_SEL       	(P1SEL)
 #define SPI_PORT_SEL2       (P1SEL2)
 #define SPI_PORT_OUT       	(P1OUT)
+#define SPI_PORT_IN       	(P1IN)
 
 #define SPI_MISO_PIN       	BIT6	// P1.6
 #define SPI_MOSI_PIN       	BIT7	// P1.7
