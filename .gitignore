@@ -48,10 +48,4 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
-*.xml
-.launches/SardNFC.launch
-Debug/SardNFC.out
-*.map
-*.opt
-Debug/main.pp
-*.obj
+
