@@ -1,8 +1,5 @@
 # TI CC project files
-.settings
-.ccsproject
-.cproject
-.project
+
 targetConfigs
 
 # Windows image file caches
