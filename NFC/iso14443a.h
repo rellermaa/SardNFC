@@ -50,7 +50,7 @@
 //===============================================================
 
 // if disabled file ISO14443A.c may be excluded from build
-#define	ENABLE14443A						// delete to disable standard
+//#define	ENABLE14443A						// delete to disable standard
 
 //===============================================================
 
