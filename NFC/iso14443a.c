@@ -38,6 +38,7 @@
 
 #include "iso14443a.h"
 #include "trf7970.h"
+#include "NFC.h"
 
 //===============================================================
 
@@ -52,6 +53,8 @@ extern s08_t rxtx_state;
 extern u08_t stand_alone_flag;
 extern u08_t remote_flag;
 extern u08_t Tag_Count;
+extern u08_t Card_UID[14];
+extern u08_t Card_RSSI;
 
 // command
 #define REQA	0x26
@@ -193,7 +196,7 @@ Iso14443aLoop(u08_t cascade_level, u08_t nvb, u08_t *uid)
 	u08_t select, new_uid1[4], coll_poss1, nvbits1;
 	u08_t cascade_level1;
 #ifdef ENABLE_HOST
-	u08_t rssi[2];
+//	u08_t rssi[2];
 #endif
 
 	while (cascade_level < 4)
@@ -270,7 +273,11 @@ Iso14443aLoop(u08_t cascade_level, u08_t nvb, u08_t *uid)
 			{
 				#ifdef ENABLE_HOST
 				Tag_Count++;
+				Copy_UID(cascade_level);
+				Copy_RSSI();
 
+// Here is code for Uart sending, lets return it instead somehow
+/*
 				UartSendCString("ISO14443 type A: ");
 				UartPutChar('[');
 				switch (cascade_level)
@@ -302,8 +309,9 @@ Iso14443aLoop(u08_t cascade_level, u08_t nvb, u08_t *uid)
 				UartPutByte(rssi[0]);
 				UartPutChar(']');
 				UartPutCrlf();
-				#endif
 
+*/
+				#endif
 				if(stand_alone_flag == 1)
 					found = 1;
 				i_reg = 0x01;					// do nothing after
@@ -524,3 +532,61 @@ void Iso14443_config(u08_t crc)
 	Trf7970ReadSingle(buf,1);
 }
 
+void Copy_UID(u08_t cascade_level)
+{
+	u08_t	j = 0, i = 0;
+
+	// Delete old data
+	for(i=0; i<14; i++)
+		Card_UID[i]=0;
+
+	switch (cascade_level)
+	{
+	case 1:
+		for (i=0; i<4; i++)
+		{
+			Card_UID[j] = complete_uid[i];
+			j++;
+		}
+		break;
+	case 2:
+		for (i=1; i<4; i++)
+		{
+			Card_UID[j] = complete_uid[i];
+			j++;
+		}
+		for (i=5; i<9; i++)
+		{
+			Card_UID[j] = complete_uid[i];
+			j++;
+		}
+		break;
+	case 3:
+		for (i=1; i<4; i++)
+		{
+			Card_UID[j] = complete_uid[i];
+			j++;
+		}
+		for (i=6; i<9; i++)
+		{
+			Card_UID[j] = complete_uid[i];
+			j++;
+		}
+		for (i=10; i<14; i++)
+		{
+			Card_UID[j] = complete_uid[i];
+			j++;
+		}
+		break;
+	default:
+		break;
+	}
+
+}
+
+void Copy_RSSI(void){
+	u08_t rssi[2];
+	rssi[0] = RSSI_LEVELS;			// read RSSI levels
+	Trf7970ReadSingle(rssi, 1);
+	Card_RSSI = rssi[0];
+}

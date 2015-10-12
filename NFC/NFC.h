@@ -17,6 +17,9 @@
 #include "uart.h"
 
 void NFC_Init(void);
+int NFC_Read(void);
+void Print_Card(void);
+
 
 
 #endif /* NFC_NFC_H_ */

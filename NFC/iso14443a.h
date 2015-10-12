@@ -62,6 +62,8 @@ void Iso14443a_halt();
 void Iso14443aSelectCommand(u08_t select, u08_t nvb, u08_t *uid);
 void Iso14443_config(u08_t crc);
 void ISO14443IRQWaitTimeout(u08_t txtimeout, u08_t rxtimeout);
+void Copy_UID(u08_t cascade_level);
+void Copy_RSSI(void);
 
 //===============================================================
 

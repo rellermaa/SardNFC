@@ -22,12 +22,15 @@
 #include <NFC.h>
 /********** GLOBAL VARIABLES **********/
 //===============================================================
+u08_t Card_RSSI;
+u08_t Card_UID[14];
 u08_t buf[100];					// TX/RX BUFFER FOR TRF7970A
 u08_t i_reg = 0x01;             // INTERRUPT REGISTER
 u08_t irq_flag = 0x00;
 u08_t rx_error_flag = 0x00;
 s08_t rxtx_state = 1;           // USED FOR TRANSMIT RECEIVE BYTE COUNT
 u08_t host_control_flag = 0;
+u08_t Tag_Count;
 
 //===============================================================
 
@@ -54,5 +57,51 @@ void NFC_Init(void)
 
 	// Re-configure the USART with this external clock
 	Trf7970ReConfig();
+
+}
+
+int NFC_Read(void)
+{
+	Tag_Count = 0;
+	// launchpad LED1 - Toggle (heartbeat)
+	P1OUT |= BIT0;
+
+	// Clear IRQ Flags before enabling TRF7970A
+	IRQ_CLR;
+	IRQ_ON;
+
+	ENABLE_TRF;
+
+	// Must wait at least 4.8 ms to allow TRF7970A to initialize.
+	__delay_cycles(40000);
+
+
+	Iso14443aFindTag();	// Scan for 14443A tags
+	IRQ_OFF;
+	DISABLE_TRF;
+
+	// Write total number of tags read to UART
+	if(Tag_Count > 0){
+		P1OUT &= ~BIT0;
+/*		Tag_Count = UartNibble2Ascii(Tag_Count & 0x0F);	// convert to ASCII
+		UartSendCString("Tags Found: ");
+		UartPutChar(Tag_Count);
+		UartPutCrlf();
+		UartPutCrlf();
+*/
+		return 1;
+	}
+	else
+		return 0;
+}
+void Print_Card(void){
+	int i=0;
+	for(i=0;i<8;i++){
+		UartPutByte(Card_UID[i]);
+	}
+	UartPutCrlf();
+	UartPutByte(Card_RSSI);
+	UartPutCrlf();
+
 
 }

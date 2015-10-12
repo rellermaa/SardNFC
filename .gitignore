@@ -1,5 +1,8 @@
 # TI CC project files
-
+.settings
+.ccsproject
+.cproject
+.project
 targetConfigs
 
 # Windows image file caches
@@ -46,3 +49,12 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+Debug/main.obj
+*.obj
+Debug/main.pp
+*.map
+Debug/SardNFC.out
+Debug/SardNFC_linkInfo.xml
+*.obj
+*.prefs
+.settings/org.eclipse.core.resources.prefs
