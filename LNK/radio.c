@@ -20,7 +20,7 @@ uint8 _Add_Address_To_Packet(uint8 *packet, uint8 length, uint8 destination);
 /***************************************************************************************************
  *	        Global Variable section  				                            				   *
  ***************************************************************************************************/
-unsigned char vcotune = 0;
+const unsigned char vcotune = 0;
 
 const uint8 P_VALUE_CH_[] = {
 		CHANNEL1_P_VALUE,  CHANNEL2_P_VALUE,  CHANNEL3_P_VALUE,  CHANNEL4_P_VALUE,  CHANNEL5_P_VALUE,  CHANNEL6_P_VALUE,
@@ -44,31 +44,44 @@ const uint8 S_VALUE_CH_[] = {
 // *************************************************************************************************
 // @fn          Radio_Init
 // @brief       Initialize 868MHz MRF89XA RF Module
-// @param       uint32 bps				Data transfer speed
-//				uint8  power			TX Power in dBm, allowed range: -8..+13dBm
-//				uint8  channel			Channel number, allowed range: 1..21
-// @return      uint8  EXIT_ERROR 		In case of error(error code returned to error)
-//			   		   EXIT_NO_ERROR 	In case of success
+// @param       uint32 bps              Data transfer speed
+//              uint8  power            TX Power in dBm, allowed range: -8..+13dBm
+//              uint8  channel          Channel number, allowed range: 1..21
+//              uint8  *error           Error code in case of error. Possible error codes are:
+//                         ERR_RF_FREQ_FIX_TIMEOUT
+// @return      uint8  EXIT_ERROR       In case of error (error code returned to error)
+//                     EXIT_NO_ERROR    In case of success
 // *************************************************************************************************
-uint8 Radio_Init(uint32 bps, uint8 power, uint8 channel, uint8* error) {
+//uint8 Radio_Init(uint32 bps, uint8 power, uint8 channel, uint8* error) {
+uint8 Radio_Init(uint32 bps, uint8 power, uint8 channel) {
+
 	uint8 n;
 	uint16 timeout = 0xFFFF;
 
 	RF_RESET();		// Reset RF module
 
-	// RX:SYNC WORD / TX: not used
+	// IRQ0 - RX:SYNC WORD / TX: not used
+	// IRQ1 - RX:CRC OK / TX:TXDONE interrupt
 	// Used to wake up MCU and start reading RSSI during RF data receiving
-	RF_IRQ0_IN();
-	RF_IRQ0_REN();
-	RF_IRQ0_IE();
-	RF_IRQ0_IES();
-	RF_IRQ0_IFG();
 
-	// RX:CRC OK / TX:TXDONE interrupt
+	// Set pin as input
+	RF_IRQ0_IN();
 	RF_IRQ1_IN();
+
+	// Enable pull-up resistor
+	RF_IRQ0_REN();
 	RF_IRQ1_REN();
-	RF_IRQ1_IE();
+
+	// Set interrupt edge LOW to HIGH edge
+	RF_IRQ0_IES();
 	RF_IRQ1_IES();
+
+	// Enable interrupt
+	RF_IRQ0_IE();
+	RF_IRQ1_IE();
+
+	// Clear pending interrupts
+	RF_IRQ0_IFG();
 	RF_IRQ1_IFG();
 
 	__delay_cycles(150000); // wait for MRF89XA POR for 10ms
@@ -114,6 +127,8 @@ uint8 Radio_Init(uint32 bps, uint8 power, uint8 channel, uint8* error) {
 		SPI_Conf_Write_Register(MRF89_REG_FILCREG, FILC_PAS_987KHZ | FILC_BUT(BW_400KHZ));
 		SPI_Conf_Write_Register(MRF89_REG_BRSREG, 1);			/* 12.8MHz / (64 * (1 + 1)) -> 100kbps */
 		SPI_Conf_Write_Register(MRF89_REG_FDEVREG, 3);			/* 12.8MHz / (32 * (3 + 1)) -> 100KHz */
+	} else {
+		return ERR_UNKNOWN_RF_SPEED;
 	}
 
 	/* enable SYNC gen/rec, 32 bits, 0 errors accepted */
@@ -132,10 +147,12 @@ uint8 Radio_Init(uint32 bps, uint8 power, uint8 channel, uint8* error) {
 	// Clock output disabled
 	SPI_Conf_Write_Register(MRF89_REG_CLKOUTREG, 0x00);
 
+
 	//variable-length format, preamble=2, whiteon=1, crc_check_ena ,  address_filtering node & 00(broadcast)
 	SPI_Conf_Write_Register(MRF89_REG_PLOADREG, 64); // maximum FIFO length in case of variable length packet
 	SPI_Conf_Write_Register(MRF89_REG_PKTCREG, PKTC_VARIABLE | PKTC_PREAMBLE_4B | PKTC_WHITENING | PKTC_ADDR_NODE_OR_00 | PKTC_CRC_ENABLE);
 	SPI_Conf_Write_Register(MRF89_REG_NADDSREG, ADDR_LOCAL);
+
 
 	// Enable FIFO read access
 	SPI_Conf_Write_Register(MRF89_REG_FCRCREG, FCRC_AUTO_CLEAR | FCRC_FIFO_STANDBY_READ);
@@ -145,10 +162,11 @@ uint8 Radio_Init(uint32 bps, uint8 power, uint8 channel, uint8* error) {
 	// Set radio into freq synth mode
 	SPI_Conf_Write_Register(MRF89_REG_GCONREG, (vcotune << 1) | GCON_FREQ_SYNTH | GCON_863_BAND | GCON_RPS_1);
 
+	// Wait for frequency fixing
 	for (;;) {
 		if (!(timeout--)) {
-			*error = ERR_RF_FREQ_FIX_TIMEOUT;
-			return EXIT_ERROR;
+			//*error = ERR_RF_FREQ_FIX_TIMEOUT;
+			return ERR_RF_FREQ_FIX_TIMEOUT;
 		}
 		n = SPI_Conf_Read_Register(MRF89_REG_FTPRIREG);
 		if (n & FTPRI_PLL_LOCKED) {
@@ -172,10 +190,10 @@ uint8 Radio_Init(uint32 bps, uint8 power, uint8 channel, uint8* error) {
 // @return		uint8 	EXIT_ERROR 		In case of error (error code returned to error argument)
 //						EXIT_NO_ERROR 	In case of success
 // *************************************************************************************************
-uint8 Radio_Tx(uint8 packet[], uint8 length, uint8 destination, uint8 *error) {
+//uint8 Radio_Tx(uint8 packet[], uint8 length, uint8 destination, uint8 *error) {
+uint8 Radio_Tx(uint8 packet[], uint8 length, uint8 destination) {
 	uint8 n;
 	uint32 timeout = 0xFFFF;
-	//uint16 timeout_ms = 2000;
 	//uint32 timeout = SYSTEM_SPEED_MHZ*10*timeout_ms;		// Timeout in ms
 
 	// Get new length of packet
@@ -201,9 +219,9 @@ uint8 Radio_Tx(uint8 packet[], uint8 length, uint8 destination, uint8 *error) {
 #if (DEBUG_ERR)
 			UART_Send_Data("\r\nLNK ERR: TX Timeout!");
 #endif
-			*error = ERR_TX_TIMEOUT;
+			//*error = ERR_TX_TIMEOUT;
 			SPI_Conf_Write_Register(MRF89_REG_GCONREG, (vcotune << 1) | GCON_STANDBY | GCON_863_BAND | GCON_RPS_1); // Put radio to standby
-			return EXIT_ERROR;
+			return ERR_TX_TIMEOUT;
 		}
 		n = SPI_Conf_Read_Register(MRF89_REG_FTPRIREG);
 
@@ -234,7 +252,8 @@ uint8 Radio_Tx(uint8 packet[], uint8 length, uint8 destination, uint8 *error) {
 //				uint8 	EXIT_ERROR 		In case of error(error code returned to error argument)
 //						EXIT_NO_ERROR 	In case of success
 // *************************************************************************************************
-uint8 Radio_Rx(uint8 packet[], uint8 *length, uint16 timeout_ms, uint8 *rssi, uint8 *error) {
+//uint8 Radio_Rx(uint8 packet[], uint8 *length, uint16 timeout_ms, uint8 *rssi, uint8 *error) {
+uint8 Radio_Rx(uint8 packet[], uint8 *length, uint16 timeout_ms, uint8 *rssi) {
 	uint8 var;
 	uint8 rssi_tmp;
 	*rssi = 0;		// Reset previous rssi value
@@ -253,45 +272,51 @@ uint8 Radio_Rx(uint8 packet[], uint8 *length, uint16 timeout_ms, uint8 *rssi, ui
 		// Timeout functionality
 		if (!(timeout--)) {					// timeout
 			//SPI_Conf_Write_Register(MRF89_REG_GCONREG, (vcotune << 1) | GCON_STANDBY | GCON_863_BAND | GCON_RPS_1);
-			*error = EXIT_TIMEOUT;
-			return EXIT_ERROR;
+			//*error = EXIT_TIMEOUT;
+			return ERR_RX_TIMEOUT;
 		}
+
 	}
+
 
 #if (DEBUG_RF)
 	UART_Send_Data("\r\nLNK RX RSSI:");
 	UART0_Send_ByteToChar(rssi);
 	UART_Send_Data("\r\nLNK Radio RX data: ");
 #endif
+
 	var = 0;
-	while (RF_IRQ_PORT_IN & RF_IRQ1_PIN) // while data last read from RF buffer
-	{
+	while (RF_IRQ_PORT_IN & RF_IRQ1_PIN) { // while data last read from RF buffer
 		packet[var] = SPI_Data_Read();
+
 #if (DEBUG_RF)
 		// Print out raw received data to UART0
 		UART0_Send_ByteToChar(&(packet[var]));
 #endif
+
 		var++;
-		if (var > RF_BUFFER_SIZE)
-		{
+		if (var > RF_BUFFER_SIZE) {
+
 #if (DEBUG_ERR)
 			UART_Send_Data("\r\nLNK ERR: RX Wrong length! Overflow");
 #endif
-			*error = ERR_RX_WRONG_LENGTH;
-			return EXIT_ERROR;
+
+			//*error = ERR_RX_WRONG_LENGTH;
+			return ERR_RX_WRONG_LENGTH;
 		}
 	}
-	if (var == packet[0]+1)
-	{
+	//
+	if (var == packet[0]+1) {
 		*length = var;
-	}
-	else
-	{
+	} else {
+
 #if (DEBUG_ERR)
 		UART_Send_Data("\r\nLNK ERR: RX wrong length! Not Equal");
 #endif
-		*error = ERR_RX_WRONG_LENGTH;
-		return EXIT_ERROR;
+
+		//*error = ERR_RX_WRONG_LENGTH;
+		return ERR_RX_WRONG_LENGTH;
+
 	}
 	return EXIT_NO_ERROR;
 }
@@ -310,7 +335,7 @@ uint8 Radio_Rx(uint8 packet[], uint8 *length, uint16 timeout_ms, uint8 *rssi, ui
 // *************************************************************************************************
 uint8 Radio_Set_Channel(uint8 channel) {
 	if( channel >= RF_CHANNEL_MAX_NUM ) {
-		return EXIT_ERROR;
+		return ERR_UNKNOWN_CH_NO;
 	}
 
 	//Program registers R, P, S and Synthesize the RF
@@ -356,12 +381,13 @@ uint8 Radio_Set_TxPower(uint8 power) {
 
 // *************************************************************************************************
 // @fn          Radio_Set_Mode
-// @brief       Set radio between different modes
-// @param		uint8 mode				Set radio mode. Supported modes are:
-//										RADIO_STANDBY
-//										RADIO_SLEEP
-//										RADIO_RX
-// @return      uint8 EXIT_NO_ERROR
+// @brief       Switch radio between different modes
+// @param		uint8 mode              Set radio mode. Supported modes are:
+//                      RADIO_STANDBY   Set radio into standby mode
+//                      RADIO_SLEEP     Set radio into sleep mode
+//                      RADIO_RX        Set radio into receive mode
+// @return      uint8 EXIT_NO_ERROR     In case of success
+//                    EXIT_ERROR        In case of error (error code returned to error)
 // *************************************************************************************************
 uint8 Radio_Set_Mode(uint8 mode) {
 	switch (mode) {
@@ -426,9 +452,9 @@ uint8 Radio_Calculate_RSSI(uint8 rssi) {
 // @brief       Reallocates *packet and adds destination address to packet and returns new *packet size
 // @param       uint8 *packet 				original data packet, where new packet is returned (!)
 //				uint8  length 				Length of the packet
-//				destination 				Address to be added to the beginning of the packet
-// @return		length 						New length in case of success
-//				packet 						Packet is reallocated and filled with new packet
+//				uint8  destination 			Address to be added to the beginning of the packet
+// @return		uint8  length 				New length in case of success
+//				uint8 *packet 				Packet is reallocated and filled with new packet
 // *************************************************************************************************
 uint8 _Add_Address_To_Packet(uint8 *packet, uint8 length, uint8 destination) {
 	uint8 var;
