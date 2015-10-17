@@ -28,24 +28,32 @@
 // @param       none
 // @return      none
 // *************************************************************************************************
-uint8 System_Init(uint8 *error) {
+uint8 System_Init(void) {
+	uint8 exit_code = 0;
+
 	WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
 
 	// Configure CPU clock
 	System_Set_Speed(SYSTEM_SPEED_MHZ);
 
 	// Ports
-	LED_PORT_DIR |=  (LED1);						//Set as output
-	LED_PORT_OUT &= ~(LED1);						// Set to LOW
-	RF_RESET_OUT();
+	LED_PORT_DIR |=  (LED1);				//Set LED1 pin as output
+	LED_PORT_OUT &= ~(LED1);				// Set LED1 pin to LOW
+	RF_RESET_OUT();							// Set RF module reset pin as output
 
 	// Communication
-	UART_Init();
-	SPI_Init();
+	UART_Init();		//
+	SPI_Init();			// RF module interface
 
 	// RF Module
-	Radio_Init(RF_DATA_RATE, TX_POWER, RF_CHANNEL, error);								// Initialize RF module with 2kbps speed
-	Radio_Set_Channel(RF_CHANNEL);
+
+	if (exit_code = Radio_Init(RF_DATA_RATE, TX_POWER, RF_CHANNEL))		// Initialize RF module with 2kbps speed
+		return exit_code;
+
+	if (exit_code = Radio_Set_Channel(RF_CHANNEL))
+		return exit_code;
+
+	__enable_interrupt();
 
 	return EXIT_NO_ERROR;
 }
@@ -147,5 +155,6 @@ __interrupt void Port_2(void) {
 		_NOP();
 	}
 
-	_BIC_SR_IRQ(LPM0_bits);
+	// Wake up from low power mode
+	__bic_SR_register_on_exit(LPM0_bits);
 }

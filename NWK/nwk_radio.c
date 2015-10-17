@@ -7,6 +7,7 @@
 
 #include "nwk_security.h"
 #include "nwk_radio.h"
+#include "system.h"
 
 /***************************************************************************************************
  *	        Define section					                       		   					       *
@@ -33,16 +34,17 @@ uint8 nwk_header[NWK_HEADER_SIZE];
 //							PAYLOAD_ENC_OFF		Encrypt the payload
 //							PAYLOAD_ENC_OFF		Do not encrypt the payload
 //				uint8 ack				Receive ACK after data was sent
-//							PCKT_ACK_ON			Ask for ACK
-//							PCKT_ACK_OFF		Do not ask for ACK
+//							PKT_ACK_ON			Ask for ACK
+//							PKT_ACK_OFF		Do not ask for ACK
 //				uint8 *error			Save error in case something went wrong
 // @return      uint8 EXIT_NO_ERROR		Return with no error
 //					  EXIT_ERROR		Return with error
 // *************************************************************************************************
-uint8 Radio_Send_Data(uint8 *packet, uint8 len, uint8 dest_address, uint8 encryption, uint8 ack, uint8 *error)
+uint8 Radio_Send_Data(uint8 *packet, uint8 len, uint8 dest_address, uint8 encryption, uint8 ack)
 {
 	uint8 lok_pack[PAYLOAD_MAX_SIZE];
 	uint8 bytenr = 0;
+	uint8 exit_code = 0;	// Function exit code
 
 	for(bytenr = 0; bytenr < len; bytenr++)
 	{
@@ -50,22 +52,13 @@ uint8 Radio_Send_Data(uint8 *packet, uint8 len, uint8 dest_address, uint8 encryp
 	}
 
 	// Check if payload is bigger than allowed
-	if (len > PAYLOAD_MAX_SIZE) {
-		*error = ERR_PAYLOAD_TOO_BIG;
-#if (DEBUG_ERR)
-	UART_Send_Data("\r\nNWK ERR: Payload too big");
-#endif
-		return EXIT_ERROR;
-	}
+	if (len > PAYLOAD_MAX_SIZE) 
+		return ERR_PAYLOAD_TOO_BIG;
 
-	if (encryption) {
-		if (len > PAYLOAD_MAX_ENC_SIZE) {
-			*error = ERR_PAYLOAD_TOO_BIG;
-#if (DEBUG_ERR)
-	UART_Send_Data("\r\nNWK ERR: Payload too big");
-#endif
-			return EXIT_ERROR;
-		}
+	if (encryption) 
+	{
+		if (len > PAYLOAD_MAX_ENC_SIZE) 
+			return ERR_PAYLOAD_TOO_BIG;
 	}
 
 	// If encryption enabled, add one byte to the unencrypted payload
@@ -78,35 +71,26 @@ uint8 Radio_Send_Data(uint8 *packet, uint8 len, uint8 dest_address, uint8 encryp
 	len = _Modify_Packet_Header(lok_pack, len, nwk_header);
 
 	// Modify CTRL byte to ask for ACK
-	if (ack) {
-		lok_pack[1] |= PKCT_CTRL_ACK_REQ;
+	if (ack)
+	{
+		lok_pack[1] |= PKT_CTRL_ACK_REQ;
 	}
 
 	// Encrypt payload
-	if (encryption) {
-		// Modify CTRL byte to enable security
-		//packet[0] |= PKCT_CTRL_SECURITY;
-		Payload_Encrypt(lok_pack+1);	// Add +1 to set encryption bit unencrypted
-		len = 16+2;		// Set new length because each packet is encrypted with 128 bits = 16 bytes
-	}
-
-	// Print out data that was sent
-#if (DEBUG_RF)
-	uint8 dbg_cntr;
-	UART_Send_Data("\r\nNWK Sending:");
 	if (encryption)
-		UART_Send_Data(" (ENC):");
-	for (dbg_cntr = 0; dbg_cntr < len; dbg_cntr++) {
-		UART_Send_Byte(packet[dbg_cntr]);
+	{
+		// Modify CTRL byte to enable security
+		Payload_Encrypt(lok_pack+1);	// Add +1 to set encryption bit unencrypted
+		len = ENC_PACKET_SIZE+2;		// Set new length because each packet is encrypted with 128 bits = 16 bytes
 	}
-#endif
 
 	// Send packet
-	Radio_Tx(lok_pack, len, dest_address, error);
+	exit_code = Radio_Tx(lok_pack, len, dest_address);
 	// DO NOT PUT ANYTHING THAT CAUSE DELAY FROM HERE TO ACK RECEIVING!!!
 
 	// Receive ACK
-	if (ack) {
+	if (ack)
+	{
 		uint16 timeout = 100;
 		uint8 cntr;
 
@@ -114,35 +98,28 @@ uint8 Radio_Send_Data(uint8 *packet, uint8 len, uint8 dest_address, uint8 encryp
 			RxPacket[cntr] = 0;
 
 		// Wait for ACK
-		Radio_Rx(RxPacket, &len, timeout, &rssi_rx, error);
+		exit_code = Radio_Rx(RxPacket, &len, timeout, &rssi_rx);
 
 		// Decrypt payload
 		if (encryption)
 			Payload_Decrypt(RxPacket+4);
 
 		// Check if received packet is ACK
-		if ((RxPacket[5]) != PCKT_TYPE_ACK) {
-			Radio_Set_Mode(RADIO_STANDBY);
-#if (DEBUG_ERR)
-			UART_Send_Data("\r\nNWK ERR: No ACK received");
-#endif
-			*error = ERR_NO_ACK;
-			return EXIT_ERROR;
-		} else {
-#if (DEBUG_RF)
-			UART_Send_Data("\r\nNWK ACK:");
-			for (cntr = 0; cntr < len; ++cntr)
+		if (RxPacket[PKT_CTRL_BYTE] & PKT_CTRL_ACK) 
+		{
+			// If packet type is ACK then check if received ACK byte itselt is ACK type
+			if ((RxPacket[PKT_PAYLOAD_BYTE1]) != PKT_TYPE_ACK) 
 			{
-				UART_Send_Byte(RxPacket[cntr]);
+				Radio_Set_Mode(RADIO_STANDBY);
 			}
-#endif
+			return ERR_NO_ACK;
 		}
 
 		// If no ACK then repeat N times and then go to sleep
 		Radio_Set_Mode(RADIO_STANDBY);
 	}
 
-	return EXIT_NO_ERROR;
+	return exit_code;
 }
 
 
@@ -156,32 +133,38 @@ uint8 Radio_Send_Data(uint8 *packet, uint8 len, uint8 dest_address, uint8 encryp
 //				uint8 *error			Save error in case something went wrong
 // @return      uint8 EXIT_NO_ERROR		Return with no error
 //					  EXIT_ERROR		Return with error
+
 // *************************************************************************************************
-uint8 Radio_Receive_Data(uint8 *packet, uint8 *length, uint16 timeout, uint8 *rssi, uint8 *error) {
+uint8 Radio_Receive_Data(uint8 *packet, uint8 *length, uint16 timeout, uint8 *rssi)
+{
 	uint32 timeout_ms = 0;		// Timeout in ms before ACK is sent
 	uint32 timeout_ack = SYSTEM_SPEED_MHZ*10*timeout_ms;
 	uint8 dest_address;
 	uint8 ack_status;		// Get the ACK status from the packet header
 	uint8 encryption;		// Get the encryption key from the packet header
+	uint8 exit_code;
 
 	// Receive data
-	if(Radio_Rx(packet, length, timeout, rssi, error)) return 1;
+	exit_code = Radio_Rx(packet, length, timeout, rssi);
+	if(exit_code)
+		return exit_code;
 
 	// Get encryption bit
-	encryption = packet[3];
+	encryption = packet[PKT_ENC_BYTE];
 
 	// Decrypt received data
 	if (encryption)
-		Payload_Decrypt(packet+4);
+		Payload_Decrypt(packet+PKT_ENC_BYTE+1);
 
 	// Extract from which source packet was coming from to send it back to the same device
-	dest_address = packet[2];
+	dest_address = packet[PKT_SRC_BYTE];
 
 	// Check if we need to send ACK back
-	ack_status = packet[4] & PKCT_CTRL_ACK_REQ;
+	ack_status = packet[PKT_CTRL_BYTE] & PKT_CTRL_ACK_REQ;
 
 	// If ACK sending enabled
-	if (ack_status) {
+	if (ack_status)
+	{
 		// Clean Tx Packet array
 		uint8 cntr;
 		for (cntr=RF_BUFFER_SIZE-1; cntr > 0; cntr--)
@@ -190,15 +173,11 @@ uint8 Radio_Receive_Data(uint8 *packet, uint8 *length, uint16 timeout, uint8 *rs
 		packet_len = 0;
 
 		// Prepare packet
-		TxPacket[packet_len] = PCKT_CTRL | PKCT_CTRL_ANSWER;
+		TxPacket[packet_len] = PKT_CTRL | PKT_CTRL_ACK |PKT_CTRL_ANSWER;
 
-		// Change encryption flag in CONTROL byte
-		if (encryption)
-			TxPacket[packet_len++] |= PKCT_CTRL_SECURITY;
-		else
-			packet_len++;
+		packet_len++;
 
-		TxPacket[packet_len++] = PCKT_TYPE_ACK;
+		TxPacket[packet_len++] = PKT_TYPE_ACK;
 
 		// If encryption enabled, add one byte to the unencrypted payload
 		if (encryption)
@@ -210,25 +189,17 @@ uint8 Radio_Receive_Data(uint8 *packet, uint8 *length, uint16 timeout, uint8 *rs
 		packet_len = _Modify_Packet_Header(TxPacket, packet_len, nwk_header);
 
 		// Encrypt payload
-		if (encryption) {
-			packet_len = 16+2;
+		if (encryption)
+		{
+			packet_len = ENC_PACKET_SIZE+2;
 			Payload_Encrypt(TxPacket+1);
 		}
 
 		// Add some delay because another side is not yet ready to receive ACK
-		while (timeout_ack--) {
-			_NOP();
-		}
+		while (timeout_ack--);
 
 		// Send ACK
-		Radio_Tx(TxPacket, packet_len, dest_address, error);
-
-#if (DEBUG_RF)
-		UART_Send_Data("\r\nNWK Sending ACK: ");
-		for (cntr = 0; cntr < packet_len; ++cntr) {
-			UART_Send_Byte(TxPacket[cntr]);
-		}
-#endif
+		Radio_Tx(TxPacket, packet_len, dest_address);
 	}
 	// Switch back to receive mode
 	Radio_Set_Mode(RADIO_RX);

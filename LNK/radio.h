@@ -62,9 +62,12 @@
 /***************************************************************************************************
  *	        Prototype section					                       							   *
  ***************************************************************************************************/
-uint8 Radio_Init(uint32 bps, uint8 power, uint8 channel, uint8* error);
-uint8 Radio_Tx(uint8 packet[], uint8 length, uint8 destination, uint8 *error);
-uint8 Radio_Rx(uint8 packet[], uint8 *length,  uint16 timeout_ms, uint8 *rssi, uint8 *error);
+//uint8 Radio_Init(uint32 bps, uint8 power, uint8 channel, uint8* error);
+uint8 Radio_Init(uint32 bps, uint8 power, uint8 channel);
+//uint8 Radio_Tx(uint8 packet[], uint8 length, uint8 destination, uint8 *error);
+uint8 Radio_Tx(uint8 packet[], uint8 length, uint8 destination);
+//uint8 Radio_Rx(uint8 packet[], uint8 *length,  uint16 timeout_ms, uint8 *rssi, uint8 *error);
+uint8 Radio_Rx(uint8 packet[], uint8 *length,  uint16 timeout_ms, uint8 *rssi);
 uint8 Radio_Set_Channel(uint8 channel);
 uint8 Radio_Set_TxPower(uint8 power);
 uint8 Radio_Set_Mode(uint8 mode);
@@ -79,5 +82,6 @@ uint8 Radio_Calculate_RSSI(uint8 rssi);
 uint8 TxPacket[RF_BUFFER_SIZE];
 uint8 RxPacket[RF_BUFFER_SIZE];
 uint8 rssi_rx;
+
 
 #endif /* RADIO_H_ */
