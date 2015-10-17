@@ -37,6 +37,71 @@ uint8 nwk_header[NWK_HEADER_SIZE];
 //                          PCKT_ACK_OFF        Do not ask for ACK
 // @return      uint8  exit_code				Return code after function exits
 // *************************************************************************************************
+
+//uint8 Radio_Send_Data(uint8 *packet, uint8 len, uint8 dest_address, uint8 encryption, uint8 ack) {
+
+uint8 Radio_Send_Data2(NWK_DataReq_t *packet)
+{
+	uint8 exit_code = 0;	// Function exit code
+
+	// Check if payload is bigger than allowed
+	if (packet->size > PAYLOAD_MAX_SIZE || (packet->control & NWK_OPT_ENABLE_SECURITY && packet->size > PAYLOAD_MAX_ENC_SIZE))
+		return ERR_PAYLOAD_TOO_BIG;
+
+	// Encrypt payload
+	if (packet->control & NWK_OPT_ENABLE_SECURITY)
+	{
+		uint8 enc_data[ENC_PACKET_SIZE+2];
+		uint8 addr;
+		enc_data[0] = packet->enc;
+		enc_data[1] = packet->ack;
+		for(addr = 2;addr < ENC_PACKET_SIZE+1;addr++)
+		{
+			enc_data[addr] = packet->data[addr-1];
+		}
+
+		Payload_Encrypt(enc_data);
+		packet->size = ENC_PACKET_SIZE;
+		exit_code = Radio_Tx(enc_data, packet->size+1, packet->dstAddr); // Send packet
+	}
+	else
+		exit_code = Radio_Tx(&packet->ack, packet->size+1, packet->dstAddr); // Send packet
+
+	// DO NOT PUT ANYTHING THAT CAUSE DELAY FROM HERE TO ACK RECEIVING!!!
+	// Receive ACK
+	if (packet->control & NWK_OPT_ACK_REQUEST)
+	{
+		uint16 timeout = ACK_WAIT_TIMEOUT;
+		uint8 cntr;
+		uint8 len;
+
+		for (cntr=RF_BUFFER_SIZE-1; cntr > 0; cntr--)
+			RxPacket[cntr] = 0;
+
+		// Recieve ACK
+		exit_code = Radio_Rx(RxPacket, &len, timeout, &rssi_rx);
+
+		// Decrypt payload
+		if (packet->control & NWK_OPT_ENABLE_SECURITY)
+			// Skip first 4 bytes as they are LEN, DST, SRC, ENC
+			Payload_Decrypt(RxPacket+4);
+
+		// Check if received packet type is ACK (ACK bit(!) in CTRL byte)
+		if (RxPacket[PKT_CTRL_BYTE] & PKT_CTRL_ACK)
+		{
+			// If packet type is ACK then check if received ACK byte itselt is ACK type
+			if ((RxPacket[PKT_PAYLOAD_BYTE1]) != PKT_TYPE_ACK)
+				Radio_Set_Mode(RADIO_STANDBY);
+			return ERR_NO_ACK;
+		}
+
+		// If no ACK then repeat N times and then go to sleep
+		Radio_Set_Mode(RADIO_STANDBY);
+	}
+
+	return exit_code;
+}
+
 uint8 Radio_Send_Data(uint8 *packet, uint8 len, uint8 dest_address, uint8 encryption, uint8 ack) {
 	uint8 exit_code = 0;	// Function exit code
 

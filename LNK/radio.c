@@ -6,6 +6,7 @@
 #include "radio.h"
 #include "uart.h"
 #include "spi.h"
+#include "nwk_radio.h"
 
 /***************************************************************************************************
  *	        Define section					                       		   					       *
@@ -180,6 +181,39 @@ uint8 Radio_Init(uint32 bps, uint8 power, uint8 channel) {
 	return EXIT_NO_ERROR;
 }
 
+uint8 Radio_Tx_Rain(NWK_DataReq_t *packet)
+{
+	uint8 n;
+	uint32 timeout = 0xFFFF;
+
+	SPI_Conf_Write_Register(MRF89_REG_GCONREG, (vcotune << 1) | GCON_TX | GCON_863_BAND | GCON_RPS_1);
+	SPI_Conf_Write_Register(MRF89_REG_FTPRIREG,	FTPRI_SBO | FTPRI_PLL_LOCK_ENABLE | FTPRI_TX_ON_FIFO_NOT_EMPTY);
+
+	SPI_Data_Write(&packet->size+4, 1);		// Whole packet length
+	SPI_Data_Write(&packet->dstAddr, 1);	// Destination byte
+	SPI_Data_Write(&packet->localAddr, 1);	// Local address byte
+	SPI_Data_Write(&packet->enc, 1);		// Encoding byte
+	SPI_Data_Write(&packet->ack, 1);		// Control/options byte
+	SPI_Data_Write(packet->data, packet->size);	// Data packet
+
+	// Wait until TX Done inerrupt comes
+	for (;;) {
+		if(	!(timeout--))
+		{
+			SPI_Conf_Write_Register(MRF89_REG_GCONREG, (vcotune << 1) | GCON_STANDBY | GCON_863_BAND | GCON_RPS_1); // Put radio to standby
+			return ERR_TX_TIMEOUT;
+		}
+		n = SPI_Conf_Read_Register(MRF89_REG_FTPRIREG);
+
+		// Check if TX_DONE
+		if (n & FTPRI_TX_DONE)
+			break;
+	}
+	// Put radio back to standby
+	SPI_Conf_Write_Register(MRF89_REG_GCONREG, (vcotune << 1) | GCON_STANDBY | GCON_863_BAND | GCON_RPS_1);
+
+	return EXIT_NO_ERROR;
+}
 
 // *************************************************************************************************
 // @fn          Radio_Tx
@@ -190,47 +224,36 @@ uint8 Radio_Init(uint32 bps, uint8 power, uint8 channel) {
 // @return		uint8 	EXIT_ERROR 		In case of error (error code returned to error argument)
 //						EXIT_NO_ERROR 	In case of success
 // *************************************************************************************************
-//uint8 Radio_Tx(uint8 packet[], uint8 length, uint8 destination, uint8 *error) {
 uint8 Radio_Tx(uint8 packet[], uint8 length, uint8 destination) {
 	uint8 n;
 	uint32 timeout = 0xFFFF;
-	//uint32 timeout = SYSTEM_SPEED_MHZ*10*timeout_ms;		// Timeout in ms
+	uint8 addLocal = ADDR_LOCAL;
 
 	// Get new length of packet
-	length = _Add_Address_To_Packet(packet, length, destination);
-
-#if (DEBUG_RF)
-	uint8 var;
-	UART_Send_Data("\r\nLNK Radio TX data: ");
-	for (var = 0; var < length; ++var) {
-		UART0_Send_ByteToChar(&(packet[var]));
-	}
-#endif
+	//length = _Add_Address_To_Packet(packet, length, destination);
 
 	SPI_Conf_Write_Register(MRF89_REG_GCONREG, (vcotune << 1) | GCON_TX | GCON_863_BAND | GCON_RPS_1);
 	SPI_Conf_Write_Register(MRF89_REG_FTPRIREG,	FTPRI_SBO | FTPRI_PLL_LOCK_ENABLE | FTPRI_TX_ON_FIFO_NOT_EMPTY);
 
-	SPI_Data_Write(&length, 1);
-	SPI_Data_Write(packet, length);
+
+	SPI_Data_Write(&length, 1);		// Whole packet length
+	SPI_Data_Write(&destination, 1);	// Destination byte
+	SPI_Data_Write(&addLocal, 1);	// Local address byte
+	SPI_Data_Write(packet, length);	// Data packet
 
 	// Wait until TX Done inerrupt comes
 	for (;;) {
-		if(	!(timeout--)){
-#if (DEBUG_ERR)
-			UART_Send_Data("\r\nLNK ERR: TX Timeout!");
-#endif
-			//*error = ERR_TX_TIMEOUT;
+		if(	!(timeout--))
+		{
 			SPI_Conf_Write_Register(MRF89_REG_GCONREG, (vcotune << 1) | GCON_STANDBY | GCON_863_BAND | GCON_RPS_1); // Put radio to standby
 			return ERR_TX_TIMEOUT;
 		}
 		n = SPI_Conf_Read_Register(MRF89_REG_FTPRIREG);
 
 		// Check if TX_DONE
-		if (n & FTPRI_TX_DONE) {
+		if (n & FTPRI_TX_DONE)
 			break;
-		}
 	}
-
 	// Put radio back to standby
 	SPI_Conf_Write_Register(MRF89_REG_GCONREG, (vcotune << 1) | GCON_STANDBY | GCON_863_BAND | GCON_RPS_1);
 

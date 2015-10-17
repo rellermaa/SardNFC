@@ -27,7 +27,8 @@ uint8 encryption_key[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 // @param       uint8 msg[]				Message to be encrypted
 // @return		uint8 EXIT_NO_ERROR
 // *************************************************************************************************
-uint8 Payload_Encrypt(uint8 *msg) {
+uint8 Payload_Encrypt(uint8 *msg)
+{
 	aes_encrypt(msg, encryption_key);
 	return EXIT_NO_ERROR;
 }

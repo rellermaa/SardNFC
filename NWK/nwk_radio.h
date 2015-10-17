@@ -37,6 +37,46 @@
 									// For long packets (up to 64 bytes) a timeout up to 1000ms may be needed
 
 /***************************************************************************************************
+ *	        Global Variable section  				                            				   *
+ ***************************************************************************************************/
+uint8 packet_len;
+
+/*- Types ------------------------------------------------------------------*/
+enum
+{
+  NWK_OPT_ACK_REQUEST          = 1 << 0,
+  NWK_OPT_ENABLE_SECURITY      = 1 << 1,
+};
+
+typedef struct NWK_DataReq_t
+{
+  // service fields
+  uint8      state;
+
+  // request parameters
+  uint8      dstAddr;
+  uint8		 localAddr;
+  uint8      enc;
+  uint8      ack;
+  uint8      *data;
+  uint8      size;
+
+  // confirmation parameters
+  uint8      status;
+  uint8      control;
+} NWK_DataReq_t;
+
+typedef struct NWK_DataInd_t
+{
+  uint16     srcAddr;
+  uint16     dstAddr;
+  uint8      options;
+  uint8      *data;
+  uint8      size;
+  int8       rssi;
+} NWK_DataInd_t;
+
+/***************************************************************************************************
  *	        Prototype section					                       							   *
  ***************************************************************************************************/
 //uint8 Radio_Send_Data(uint8 *packet, uint8 len, uint8 dest_address, uint8 encryption, uint8 ack, uint8 *error);
@@ -45,11 +85,7 @@ uint8 Radio_Send_Data(uint8 *packet, uint8 len, uint8 dest_address, uint8 encryp
 //uint8 Radio_Receive_Data(uint8 *packet, uint8 *length, uint16 timeout, uint8 *rssi, uint8 *error);
 uint8 Radio_Receive_Data(uint8 *packet, uint8 *length, uint16 timeout, uint8 *rssi);
 
-
-/***************************************************************************************************
- *	        Global Variable section  				                            				   *
- ***************************************************************************************************/
-uint8 packet_len;
+uint8 Radio_Send_Data2(NWK_DataReq_t *packet);
 
 
 #endif 

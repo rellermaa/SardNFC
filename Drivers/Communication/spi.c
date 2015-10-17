@@ -158,10 +158,12 @@ unsigned char SPI_Conf_Write_Register(unsigned char address, unsigned char data)
 // @param       uint8 data          Configuration data
 // @return      uint8 Rx_buf        Result of configuration
 // *************************************************************************************************
-unsigned char SPI_Data_Write(unsigned char *packet, unsigned int len) {
+unsigned char SPI_Data_Write(unsigned char *packet, unsigned int len)
+{
 	unsigned char Rx_buf;
 
-	while (len-- > 0) {
+	while (len-- > 0)
+	{
 		SPI_CS_DATA_LO();
 		Rx_buf = Spi_Send(*packet++);
 		SPI_CS_DATA_HI();

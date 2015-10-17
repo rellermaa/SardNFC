@@ -6,9 +6,9 @@ void Protocol_Send_Status()
 {
 	uint8 retries;
 	uint8 x;
-	uint8 error;
 	uint8 length = 5;
 	uint8 lokPack[16];
+	uint8 error;
 
 	// Copy data to be sent to a temporary buffer
 	for(x = 4;x;x--)
@@ -18,7 +18,7 @@ void Protocol_Send_Status()
 		UART_Send_Byte(' ');
 	}
 	lokPack[1] = PROTOCOL_SYS_STATUS;
-	Radio_Send_Data(lokPack, length, ADDR_REMOTE, PAYLOAD_ENC_ON, PCKT_ACK_ON, &error);
+	error = Radio_Send_Data(lokPack, length, ADDR_REMOTE, PAYLOAD_ENC_ON, PCKT_ACK_ON);
 	if(error == ERR_NO_ACK)
 	{
 		for(retries = 5;retries;retries--)
@@ -27,7 +27,7 @@ void Protocol_Send_Status()
 			for(x = 4;x;x--)
 				lokPack[x] = StatusVar[x-1];
 			lokPack[1] = PROTOCOL_SYS_STATUS;
-			if(!(Radio_Send_Data(lokPack, length, ADDR_REMOTE, PAYLOAD_ENC_ON, PCKT_ACK_ON, &error)))
+			if(!(Radio_Send_Data(lokPack, length, ADDR_REMOTE, PAYLOAD_ENC_ON, PCKT_ACK_ON)))
 				break;
 		}
 	}

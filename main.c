@@ -26,7 +26,7 @@ int main(void)
 
 	uint8 MainPacket[RF_BUFFER_SIZE];
 
-	System_Init(&error);
+	System_Init();
 	__enable_interrupt();
 
 	UART_Send_Data("TRANCEIVER\r\n");
@@ -58,7 +58,7 @@ int main(void)
 
 			for(x = RF_BUFFER_SIZE-1;x;x--)
 				TxPacket[x-1] = MainPacket[x-1];
-			Radio_Send_Data(TxPacket, payload_length, ADDR_REMOTE, PAYLOAD_ENC_ON, PCKT_ACK_ON, &error);
+			Radio_Send_Data(TxPacket, payload_length, ADDR_REMOTE, PAYLOAD_ENC_ON, PCKT_ACK_ON);
 			if(error == ERR_NO_ACK)
 			{
 				for(retries = 5;retries;retries--)
@@ -66,7 +66,7 @@ int main(void)
 					UART_Send_Data("NWK ERR: No ACK received\r\n");
 					for(x = RF_BUFFER_SIZE;x;x--)
 						TxPacket[x-1] = MainPacket[x-1];
-					if(!(Radio_Send_Data(TxPacket, payload_length, ADDR_REMOTE, PAYLOAD_ENC_ON, PCKT_ACK_ON, &error)))
+					if(!(Radio_Send_Data(TxPacket, payload_length, ADDR_REMOTE, PAYLOAD_ENC_ON, PCKT_ACK_ON)))
 						break;
 				}
 			}
@@ -77,13 +77,13 @@ int main(void)
 		}
 
 		// Receive data, wait until 500ms until timeout and continue with other tasks
-		if (Radio_Receive_Data(RxPacket, &len, 1, &rssi_rx, &error))
+		if (Radio_Receive_Data(RxPacket, &len, 1, &rssi_rx))
 		{
 			// If error
 			if (error == ERR_RX_WRONG_LENGTH)
 			{
 				UART_Send_Data("DBG RF ReInit!\r\n");
-				Radio_Init(RF_DATA_RATE, TX_POWER, RF_CHANNEL, &error);
+				Radio_Init(RF_DATA_RATE, TX_POWER, RF_CHANNEL);
 			}
 		}
 		else

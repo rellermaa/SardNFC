@@ -104,7 +104,6 @@ void aes_encr(unsigned char *state, unsigned char *expandedKey)
 {
   unsigned char buf1, buf2, buf3, round;
 
-    
   for (round = 0; round < 9; round ++){
     // addroundkey, sbox and shiftrows
     // row 0

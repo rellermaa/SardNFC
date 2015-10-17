@@ -22,7 +22,7 @@
 	#define ADDR_REMOTE		0x01
 #endif
 #ifdef TRANCEIVER
-	#define ADDR_LOCAL		0x07	// Local Node address
+	#define ADDR_LOCAL		(uint8) 0x07	// Local Node address
 	#define ADDR_REMOTE		0x08
 #endif
 
