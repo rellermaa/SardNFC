@@ -14,6 +14,36 @@
 
 #include "Protocol.h"
 
+#define PACKET_SIZE 20
+uint8 nwk_packet[PACKET_SIZE];
+
+uint8 send_data(uint8 *data)
+{
+	uint8 retries;
+	uint8 x;
+	uint8 tmp_packet[PACKET_SIZE];
+	uint8 error;
+
+	for(x = PACKET_SIZE-1;x;x--)
+		tmp_packet[x-1] = data[x-1];
+	Radio_Send_Data(TxPacket, 16, ADDR_REMOTE, PAYLOAD_ENC_ON, PCKT_ACK_ON, &error);
+	if(error == ERR_NO_ACK)
+	{
+		for(retries = 5;retries;retries--)
+		{
+			UART_Send_Data("NWK ERR: No ACK received\r\n");
+			for(x = PACKET_SIZE-1;x;x--)
+					tmp_packet[x-1] = data[x-1];
+			if(!(Radio_Send_Data(tmp_packet, 16, ADDR_REMOTE, PAYLOAD_ENC_ON, PCKT_ACK_ON, &error)))
+				break;
+		}
+	}
+	// Set radio into RX mode
+	Radio_Set_Mode(RADIO_RX);
+
+	return error;
+}
+
 /*
  * main.c
  */
