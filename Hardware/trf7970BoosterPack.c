@@ -67,7 +67,7 @@ McuDelayMillisecond(u32_t n_ms)
 {
     while (n_ms--)
     {
-        __delay_cycles(DELAY_1ms);        // clock speed in Hz divided by 1000
+        __delay_cycles(2*DELAY_1ms);        // clock speed in Hz divided by 1000
     }
 }
 

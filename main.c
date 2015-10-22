@@ -5,6 +5,18 @@
  *
  */
 #include <NFC.h>
+#include "system.h"
+#include "network.h"
+#include "general.h"
+
+// Drivers
+#include "uart.h"
+#include "soft_spi.h"
+#include "radio.h"
+
+// Network
+#include "nwk_security.h"
+#include "nwk_radio.h"
 
 u08_t stand_alone_flag = 1;
 u08_t enable = 0;
@@ -14,16 +26,30 @@ void main(void)
 {
 	// WDT ~350ms, ACLK=1.5kHz, interval timer
 	WDTCTL = WDT_ADLY_16;
+
+	// Configure CPU clock
+	System_Set_Speed(SYSTEM_SPEED_MHZ);
+
 	// Enable WDT interrupt
 	IE1 |= WDTIE;
+	McuDelayMillisecond(2);
 	NFC_Init();
+
+	// Ports
+	LED_PORT_DIR |=  (LED1);				//Set LED1 pin as output
+	LED_PORT_OUT &= ~(LED1);				// Set LED1 pin to LOW
+	RF_RESET_OUT();							// Set RF module reset pin as output
+
 	// Configure UART
-	UartSetup();
+	UART_Init();		//
+	SPI_Init();			// RF module interface
 
 	McuDelayMillisecond(5);
-	UartSendCString("Reader enabled.");
-	UartPutCrlf();
+	UART_Send_Data("Reader enabled.\n\r");
 	McuDelayMillisecond(2);
+
+	Radio_Init(RF_DATA_RATE, TX_POWER, RF_CHANNEL);	// Initialize RF module with 2kbps speed
+	Radio_Set_Channel(RF_CHANNEL);
 
 	// General enable interrupts
 	__bis_SR_register(GIE);
@@ -51,61 +77,5 @@ __interrupt void watchdog_timer(void)
    __bic_SR_register_on_exit(LPM3_bits);
 }
 
-/********** IT'S A TRAP!!!! (ISR'S) **********/
-//===============================================================
-#pragma vector= PORT1_VECTOR
-__interrupt void PORT1_ISR (void)
-{
-	while(1);
-}
-
-#pragma vector= ADC10_VECTOR
-__interrupt void ADC12_ISR (void)
-{
-	while(1);
-}
-
-#pragma vector= USCIAB0TX_VECTOR
-__interrupt void USCIAB0TX_ISR (void)
-{
-	while(1);
-}
-
-#pragma vector= USCIAB0RX_VECTOR
-__interrupt void USCIAB0RX_ISR (void)
-{
-	while(1);
-}
-
-#pragma vector= TIMER0_A1_VECTOR
-__interrupt void TIMER0_A1_ISR (void)
-{
-	while(1);
-}
-
-#pragma vector= COMPARATORA_VECTOR
-__interrupt void COMPARATORA_ISR (void)
-{
-	while(1);
-}
-
-#pragma vector= TIMER1_A1_VECTOR
-__interrupt void TIMER1_A1_ISR (void)
-{
-	while(1);
-}
-
-#pragma vector= TIMER1_A0_VECTOR
-__interrupt void TIMER1_A0_ISR (void)
-{
-	while(1);
-}
-
-#pragma vector= NMI_VECTOR
-__interrupt void NMI_ISR (void)
-{
-	while(1);
-}
-//===============================================================
 
 

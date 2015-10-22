@@ -40,6 +40,8 @@
 #include "trf7970.h"
 #include "NFC.h"
 
+#define ENABLE_HOST
+
 //===============================================================
 
 u08_t	complete_uid[14];

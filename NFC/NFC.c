@@ -26,7 +26,7 @@ u08_t Card_RSSI;
 u08_t Card_UID[14];
 u08_t buf[100];					// TX/RX BUFFER FOR TRF7970A
 u08_t i_reg = 0x01;             // INTERRUPT REGISTER
-u08_t irq_flag = 0x00;
+volatile u08_t irq_flag = 0x00;
 u08_t rx_error_flag = 0x00;
 s08_t rxtx_state = 1;           // USED FOR TRANSMIT RECEIVE BYTE COUNT
 u08_t host_control_flag = 0;
@@ -53,7 +53,7 @@ void NFC_Init(void)
 	Trf7970InitialSettings();
 
 	// set the DCO to 8 MHz
-	McuOscSel(1);
+	//McuOscSel(1);
 
 	// Re-configure the USART with this external clock
 	Trf7970ReConfig();
@@ -96,12 +96,13 @@ int NFC_Read(void)
 }
 void Print_Card(void){
 	int i=0;
-	for(i=0;i<8;i++){
-		UartPutByte(Card_UID[i]);
+	for(i=0;i<8;i++)
+	{
+		UART0_Send_ByteToChar(&Card_UID[i]);
 	}
-	UartPutCrlf();
-	UartPutByte(Card_RSSI);
-	UartPutCrlf();
+	UART_Send_Data("\n\r");
+	UART0_Send_ByteToChar(&Card_RSSI);
+	UART_Send_Data("\n\r");
 
 
 }

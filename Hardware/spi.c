@@ -200,7 +200,8 @@ SpiRawWrite(u08_t *pbuf, u08_t length)
 void
 SpiReadCont(u08_t *pbuf, u08_t length)
 {
-  //Start SPI Mode
+  uint16 timeout = 0xFF;
+	//Start SPI Mode
   SLAVE_SELECT_LOW;
   
   // Address/Command Word Bit Distribution
@@ -227,7 +228,8 @@ SpiReadCont(u08_t *pbuf, u08_t length)
       //Receive initiated by a dummy TX write
       UCB0TXBUF = 0xFF;
     
-      while(!(IFG2 & UCB0RXIFG));
+      while(!(IFG2 & UCB0RXIFG) && timeout)
+    	  timeout--;
     
       *pbuf = UCB0RXBUF;
       pbuf++;

@@ -83,17 +83,17 @@
 #define IRQ_CLR             P2IFG = 0x00
 #define IRQ_REQ_REG         P2IFG
 
-#define LED_PORT_SET        P2DIR |= (BIT3+BIT4+BIT5);
-#define LED_ALL_OFF         P2OUT &= ~(BIT3+BIT4+BIT5);
-#define LED_ALL_ON          P2OUT |= (BIT3+BIT4+BIT5);
+#define LED_PORT_SET        ;//P1DIR |= (BIT3+BIT4+BIT5);
+#define LED_ALL_OFF         ;//P1OUT &= ~(BIT3+BIT4+BIT5);
+#define LED_ALL_ON          ;//P1OUT |= (BIT3+BIT4+BIT5);
 #define LED_POWER_ON        ;
 #define LED_POWER_OFF       ;
-#define LED_14443A_ON       P2OUT |= BIT4;
-#define LED_14443A_OFF      P2OUT &= ~BIT4;
-#define LED_14443B_ON       P2OUT |= BIT3;
-#define LED_14443B_OFF      P2OUT &= ~BIT3;
-#define LED_15693_ON        P2OUT |= BIT5;
-#define LED_15693_OFF       P2OUT &= ~BIT5;
+#define LED_14443A_ON       ;//P1OUT |= BIT4;
+#define LED_14443A_OFF      ;//P1OUT &= ~BIT4;
+#define LED_14443B_ON       ;//P1OUT |= BIT3;
+#define LED_14443B_OFF      ;//P1OUT &= ~BIT3;
+#define LED_15693_ON        ;//P1OUT |= BIT5;
+#define LED_15693_OFF       ;//P1OUT &= ~BIT5;
 #define LED_OPEN1_ON        ;
 #define LED_OPEN1_OFF       ;
 #define LED_OPEN2_ON        ;
