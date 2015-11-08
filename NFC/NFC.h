@@ -20,6 +20,8 @@ void NFC_Init(void);
 int NFC_Read(void);
 void Print_Card(void);
 
+extern u08_t Card_UID[14];
+extern u08_t Card_RSSI;
 
 
 #endif /* NFC_NFC_H_ */

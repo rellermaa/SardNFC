@@ -58,7 +58,7 @@ uint8 Radio_Init(uint32 bps, uint8 power, uint8 channel) {
 	uint8 n;
 	uint16 timeout = 0xFF;
 
-	RF_RESET();		// Reset RF module
+	//RF_RESET();		// Reset RF module
 
 	// IRQ0 - RX:SYNC WORD / TX: not used
 	// IRQ1 - RX:CRC OK / TX:TXDONE interrupt

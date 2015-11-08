@@ -35,7 +35,7 @@ void SPI_Init(void) {
 	//SPI_SEL2();
 
 	SPI_CLK_OUT();
-	SPI_MOSI_OUT();
+	SPI_MOSI_OUT(); //SCK also OUT
 	SPI_MISO_IN();
 
 	SPI_CS_DATA_OUT();
