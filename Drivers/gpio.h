@@ -37,9 +37,17 @@
 #define LED_PORT_DIR      	(P1DIR)
 #define LED_PORT_OUT       	(P1OUT)
 
-#define LED1  	     		BIT0	// P1.0 (RED)
-//#define LED2       		BIT6	// P1.6 (GREEN); used by SPI
+#define LED_R  	     		BIT0	// P1.2 (RED)
+//#define LED_G       		BIT1	// P1.1 (GREEN)
 
+/********** BUZZER & RELAY  ***********/
+
+#define BUZZER_PORT_DIR      	(P2DIR)
+#define BUZZER_PORT_OUT       	(P2OUT)
+#define RELAY_PORT_DIR      	(P1DIR)
+#define RELAY_PORT_OUT       	(P1OUT)
+#define BUZZER  	 		BIT5	// P2.5
+//#define RELAY       		BIT0	// P1.0
 
 /********* SPI ************/
 #define SPI_PORT_DIR      	(P1DIR)
@@ -49,7 +57,7 @@
 
 #define SPI_MISO_PIN       	BIT6	// P1.6
 #define SPI_MOSI_PIN       	BIT7	// P1.7
-#define SPI_CLK_PIN        	BIT5	// P1.5
+#define SPI_CLK_PIN        	BIT4	// P1.5
 #define SPI_CS_DATA_PIN    	BIT3	// P1.3
 #define SPI_CS_CONF_PIN    	BIT4	// P1.4
 

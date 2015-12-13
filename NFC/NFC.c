@@ -64,7 +64,7 @@ int NFC_Read(void)
 {
 	Tag_Count = 0;
 	// launchpad LED1 - Toggle (heartbeat)
-	P1OUT |= BIT0;
+	//P1OUT |= BIT0;
 
 	// Clear IRQ Flags before enabling TRF7970A
 	IRQ_CLR;
@@ -82,7 +82,7 @@ int NFC_Read(void)
 
 	// Write total number of tags read to UART
 	if(Tag_Count > 0){
-		P1OUT &= ~BIT0;
+		//P1OUT &= ~BIT0;
 /*		Tag_Count = UartNibble2Ascii(Tag_Count & 0x0F);	// convert to ASCII
 		UartSendCString("Tags Found: ");
 		UartPutChar(Tag_Count);

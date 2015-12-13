@@ -8,10 +8,8 @@
  *	        Define section					                       		   					       *
  ***************************************************************************************************/
 
-#define SPI_SEL()      		{ SPI_PORT_SEL  |=  SPI_MISO_PIN | SPI_MOSI_PIN | SPI_CLK_PIN; }
-#define SPI_SEL2()     		{ SPI_PORT_SEL2 |=  SPI_MISO_PIN | SPI_MOSI_PIN | SPI_CLK_PIN; }
 #define SPI_CLK_OUT()  		{ SPI_PORT_DIR  |=  SPI_CLK_PIN; }
-#define SPI_MOSI_OUT() 		{ P2DIR  |=  SPI_MOSI_PIN; }
+#define SPI_MOSI_OUT() 		{ P2DIR  |=  SPI_MOSI_PIN | SPI_CLK_PIN; }
 #define SPI_MISO_IN()  		{ P2DIR  &= ~SPI_MISO_PIN; }
 
 #define SPI_CS_DATA_OUT()   { SPI_PORT_DIR |=  SPI_CS_DATA_PIN; }
@@ -25,8 +23,8 @@
 #define SPI_DATA_LO()    	P2OUT &= ~SPI_MOSI_PIN
 #define SPI_DATA_HI()    	P2OUT |= SPI_MOSI_PIN
 
-#define SPI_CLK_LO()    	SPI_PORT_OUT &= ~SPI_CLK_PIN
-#define SPI_CLK_HI()    	SPI_PORT_OUT |= SPI_CLK_PIN
+#define SPI_CLK_LO()    	P2OUT &= ~SPI_CLK_PIN
+#define SPI_CLK_HI()    	P2OUT |= SPI_CLK_PIN
 
 #define SPI_DATA_IN			((P2IN & SPI_MISO_PIN) >> 6)
 

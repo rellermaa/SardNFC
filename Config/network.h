@@ -13,8 +13,9 @@
 #define NETWORK_ADDR4		0x01	// 0x01
 
 // Node address
-#define ADDR_LOCAL		0x01	// Local Node address
+#define ADDR_LOCAL		0x02	// Local Node address
 #define ADDR_REMOTE		0x10	// Receiver address; recommended to set 0x01
+#define ADDR_SERVER		0x04	// Server address
 
 
 
